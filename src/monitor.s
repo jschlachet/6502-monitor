@@ -70,6 +70,7 @@ reset:
  
 
 prompt_loop:
+  jsr clear_input
   jsr show_prompt
 
   cli                   ; clear interrupt (enable)
@@ -230,7 +231,9 @@ init_run_vector:
 
   ; Modified from http://www.6502.org/source/general/clearmem.htm
 init_ram_block:
+  PHA
   PHX
+  PHY
   LDA #$ff
   TAX
   LDA #$00                ; Set up zero value
@@ -240,8 +243,41 @@ init_ram_block_loop:
   INY                     ; Advance index pointer
   DEX                     ; Decrement counter
   BNE init_ram_block_loop ; Not zero, continue checking
+  PLY
   PLX
+  PLA
   RTS                     ; Return
+
+clear_input:
+  ; clear input variables, INPUT_COMMAND and INPUT_ARGS both 16 bytes
+  PHA
+
+  LDA #<INPUT_COMMAND
+  STA ZP_POINTER
+  LDA #>INPUT_COMMAND
+  STA ZP_POINTER+1
+  JSR clear_16bytes       ; clear input_command
+
+  LDA #<INPUT_ARGS
+  STA ZP_POINTER
+  LDA #>INPUT_ARGS
+  STA ZP_POINTER+1
+  JSR clear_16bytes       ; clear input_args
+
+  PLA
+  RTS
+
+clear_16bytes:
+  PHY
+  LDA #$00                ; store zero in A and Y
+  TAY                     ;
+clear_16bytes_loop:
+  STA (ZP_POINTER),y
+  INY
+  CPY #$10
+  BNE clear_16bytes_loop
+  PLY
+  RTS
 
   
   .include "xmodem-crc.s"
