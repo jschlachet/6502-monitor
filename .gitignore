@@ -1,0 +1,8 @@
+.git
+*.out
+*.bin
+build/*
+rom/*
+LOCAL
+obj/*
+user/bin/*
