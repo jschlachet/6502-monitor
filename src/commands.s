@@ -10,6 +10,8 @@ COMMAND_JMP:      .asciiz "jmp"
 COMMAND_LED:      .asciiz "led"
 COMMAND_LOAD:     .asciiz "load"
 COMMAND_READ:     .asciiz "read"
+COMMAND_REBOOT:   .asciiz "reboot"
+COMMAND_RUN:      .asciiz "run"
 COMMAND_STATUS:   .asciiz "status"
 COMMAND_WRITE:    .asciiz "write"
 COMMAND_VERSION:  .asciiz "version"
@@ -143,6 +145,17 @@ parse_command_crash_continue:
   JMP parse_command_read
 parse_command_read_continue:
 
+  ; reboot
+  LDA #<COMMAND_REBOOT
+  STA ZP_COMMAND
+  LDA #>COMMAND_REBOOT
+  STA ZP_COMMAND+1
+  JSR strcmp
+  CMP #EQUAL
+  BNE parse_command_reboot_continue
+  JMP parse_command_reboot
+parse_command_reboot_continue:
+
  ; jmp
   LDA #<COMMAND_JMP
   STA ZP_COMMAND
@@ -154,6 +167,16 @@ parse_command_read_continue:
   JMP parse_command_jmp
 parse_command_jmp_continue:
 
+ ; run
+  LDA #<COMMAND_RUN
+  STA ZP_COMMAND
+  LDA #>COMMAND_RUN
+  STA ZP_COMMAND+1
+  JSR strcmp
+  CMP #EQUAL
+  BNE parse_command_run_continue
+  JMP parse_command_run
+parse_command_run_continue:
 
   ; write
   LDA #<COMMAND_WRITE
@@ -417,6 +440,24 @@ parse_command_jmp:
   JMP (ZP_POINTER,x)
 
 
+parse_command_run:
+  ; STZ ZP_POINTER
+  ; STZ ZP_POINTER+1
+
+  LDA #<message_jmp    ; print output header
+  STA ZP_MESSAGE
+  LDA #>message_jmp
+  STA ZP_MESSAGE+1
+  JSR send_message_serial
+
+  LDA #<RUN_ADDR
+  STA ZP_POINTER
+  LDA #>RUN_ADDR
+  STA ZP_POINTER+1
+  LDX #$00
+  JMP (ZP_POINTER,x)
+
+
 parse_command_jmp_return:
   LDA #<message_jmp_return    ; print output header
   STA ZP_MESSAGE
@@ -426,6 +467,15 @@ parse_command_jmp_return:
 
   JSR print_memory_line
   JMP option_done
+
+
+parse_command_reboot:
+  LDA #<reset
+  STA ZP_POINTER
+  LDA #>reset
+  STA ZP_POINTER+1
+  LDX #$00
+  JMP (ZP_POINTER,x)
 
 
 ; convert hex string (2 digits) to byte value

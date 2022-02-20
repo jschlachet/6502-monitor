@@ -39,4 +39,4 @@ clean:
 
 
 burn:
-	$(MINIPRO_BINARY) $(MINIPRO_FLAGS) -w $(ROM_DIR)/$(ROM)
+	$(MINIPRO_BINARY) $(MINIPRO_FLAGS) -w $(ROM_DIR)/monitor

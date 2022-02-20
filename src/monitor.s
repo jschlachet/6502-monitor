@@ -45,6 +45,7 @@ reset:
   txs
 
   jsr init_ram
+  jsr init_run_vector   ; initialize code at run location   (init to prompt_loop)
 
   jsr init_via
 
@@ -66,6 +67,8 @@ reset:
 
   jsr set_message_startup
   jsr send_message_serial
+
+ 
 
 prompt_loop:
   jsr show_prompt
@@ -197,6 +200,9 @@ init_ram:
   STZ $00             ; zero page
   STZ $01
   JSR init_ram_block
+  ; LDA #$01            ; $0100 ()
+  ; STA $01
+  ; JSR init_ram_block
   LDA #$02            ; $0200 (acia buffer)
   STA $01
   JSR init_ram_block
@@ -207,6 +213,15 @@ init_ram:
   STA $01
   JSR init_ram_block
 init_ram_done:
+  RTS
+
+init_run_vector:
+  LDA #$4C              ; store opcode for JMP 
+  STA RUN_ADDR+0 
+  LDA #<prompt_loop     ; store low byte of prompt_loop address
+  STA RUN_ADDR+1
+  LDA #>prompt_loop     ; store high byte of prompt_loop address
+  STA RUN_ADDR+2
   RTS
 
   ; Modified from http://www.6502.org/source/general/clearmem.htm
