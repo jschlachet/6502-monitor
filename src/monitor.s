@@ -44,6 +44,8 @@ reset:
   ldx #$ff
   txs
 
+  jsr init_ram
+
   jsr init_via
 
   jsr sound_mute
@@ -191,6 +193,36 @@ irq_end:
   RTI
 
 
+init_ram:
+  STZ $00             ; zero page
+  STZ $01
+  JSR init_ram_block
+  LDA #$02            ; $0200 (acia buffer)
+  STA $01
+  JSR init_ram_block
+  LDA #$03            ; $0300 (global variables)
+  STA $01
+  JSR init_ram_block
+  LDA #$30            ; $3000 (user program)
+  STA $01
+  JSR init_ram_block
+init_ram_done:
+  RTS
+
+  ; Modified from http://www.6502.org/source/general/clearmem.htm
+init_ram_block:
+  LDA #$ff
+  TAX
+  LDA #$00                ; Set up zero value
+  TAY                     ; Initialize index pointer
+init_ram_loop:
+  STA ($00),Y             ; Clear memory location
+  INY                     ; Advance index pointer
+  DEX                     ; Decrement counter
+  BNE init_ram_loop       ; Not zero, continue checking
+  RTS                     ; Return
+
+  
   .include "xmodem-crc.s"
 
   .segment "VECTORS"
