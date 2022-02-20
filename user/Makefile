@@ -17,11 +17,14 @@ BIN_DIR=bin
 
 OBJS = hello.o
 
-all: hello
+all: hello blink
 
 hello: $(OBJ_DIR)/monitor.o
 	$(CA65_BINARY) $(CA65_FLAGS) --include-dir $(CONFIG_DIR) -o $(BUILD_DIR)/hello.o src/hello.s
 	$(LD65_BINARY) $(LD65_FLAGS) -o $(BIN_DIR)/hello $(OBJ_DIR)/monitor.o $(BUILD_DIR)/hello.o
 
+blink: $(OBJ_DIR)/monitor.o
+	$(CA65_BINARY) $(CA65_FLAGS) --include-dir $(CONFIG_DIR) -o $(BUILD_DIR)/blink.o src/blink.s
+	$(LD65_BINARY) $(LD65_FLAGS) -o $(BIN_DIR)/blink $(OBJ_DIR)/monitor.o $(BUILD_DIR)/blink.o
 
 

@@ -1,49 +1,25 @@
 ; test "hello world" which blinks all pins on port a of via 2
-.include "monitor.inc"
+  .include "functions.cfg"
 
-.segment "USER"
+  .segment "USER"
 
-PORTB = $6000               ; via 2
-PORTA = $6001
-DDRB  = $6002
-DDRA  = $6003
+  .import prompt_loop
+  .import sys_led_on
+  .import sys_led_off
 
   .word $3000               ; put origin at the top of the output binary file
   .org $3000
 
-  LDA #$FF
-  STA DDRB                  ; set all pins output
-hello_loop:
-  JSR delay
-  ; NOP
-  ; NOP
-  ; NOP
-  ; NOP
-  ; NOP
-  ; NOP
-  LDA #$FF
-  STA PORTA
-  JSR delay
-  ; NOP
-  ; NOP
-  ; NOP
-  ; NOP
-  ; NOP
-  ; NOP
-  LDA #$00
-  STA PORTA
-  JMP hello_loop
+  JSR sys_led_on
 
-
-delay:
-  PHA
-  PHY
-  LDA #$ff
-  LDY #$ff
+  LDA #$FF
+  LDY #$FF
   JSR delay_ay
-  PLY
-  PLA
-  RTS
+
+  JSR sys_led_off
+
+  JMP prompt_loop
+
 
 delay_ay:
   CPY #1                ; (2)

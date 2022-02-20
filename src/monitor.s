@@ -35,9 +35,8 @@
   .include "lcd-4bit.s"
   .include "via.s"
   .include "sn76489.s"
+  .include "functions.s"
 
-  .global prompt_loop
-  .global send_message_serial
 
 
 reset:
