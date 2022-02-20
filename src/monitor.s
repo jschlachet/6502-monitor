@@ -197,21 +197,26 @@ irq_end:
 
 
 init_ram:
-  STZ $00             ; zero page
-  STZ $01
+  STZ ZP_POINTER        ; $0000 zero page
+  STZ ZP_POINTER+1
   JSR init_ram_block
-  ; LDA #$01            ; $0100 ()
-  ; STA $01
-  ; JSR init_ram_block
-  LDA #$02            ; $0200 (acia buffer)
-  STA $01
+
+  LDA #$02              ; $0200 (acia buffer)
+  STA ZP_POINTER+1
   JSR init_ram_block
-  LDA #$03            ; $0300 (global variables)
-  STA $01
+
+  LDA #$03              ; $0300 (global variables)
+  STA ZP_POINTER+1
   JSR init_ram_block
-  LDA #$30            ; $3000 (user program)
-  STA $01
-  JSR init_ram_block
+
+  LDX #$30              ; $3000 - $3fff (user program space)
+init_ram_loop:          ;
+  STX ZP_POINTER+1      ;
+  JSR init_ram_block    ;
+  INX                   ; next page
+  CPX #$40              ; stop if we've reached $4000
+  BNE init_ram_loop     ;
+
 init_ram_done:
   RTS
 
@@ -226,15 +231,17 @@ init_run_vector:
 
   ; Modified from http://www.6502.org/source/general/clearmem.htm
 init_ram_block:
+  PHX
   LDA #$ff
   TAX
   LDA #$00                ; Set up zero value
   TAY                     ; Initialize index pointer
-init_ram_loop:
-  STA ($00),Y             ; Clear memory location
+init_ram_block_loop:
+  STA (ZP_POINTER),Y             ; Clear memory location
   INY                     ; Advance index pointer
   DEX                     ; Decrement counter
-  BNE init_ram_loop       ; Not zero, continue checking
+  BNE init_ram_block_loop ; Not zero, continue checking
+  PLX
   RTS                     ; Return
 
   
