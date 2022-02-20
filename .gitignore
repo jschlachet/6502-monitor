@@ -6,3 +6,4 @@ rom/*
 LOCAL
 obj/*
 user/bin/*
+user/build/*
