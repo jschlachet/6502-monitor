@@ -9,19 +9,19 @@ CA65_FLAGS=--cpu 65C02
 LD65_FLAGS=-C $(FIRMWARE_CFG)
 
 SOURCE_DIR=.
-BUILD_DIR=../build
+BUILD_DIR=build
 INCLUDE_DIR=../../include/
 CONFIG_DIR=../config/
 OBJ_DIR=../obj
-BIN_DIR=../bin
+BIN_DIR=bin
 
 OBJS = hello.o
 
 all: hello
 
 hello:
-	$(CA65_BINARY) $(CA65_FLAGS) --include-dir $(CONFIG_DIR) -o hello.o src/hello.s
-	$(LD65_BINARY) $(LD65_FLAGS) -o hello $(OBJ_DIR)/monitor.o hello.o
+	$(CA65_BINARY) $(CA65_FLAGS) --include-dir $(CONFIG_DIR) -o $(BUILD_DIR)/hello.o src/hello.s
+	$(LD65_BINARY) $(LD65_FLAGS) -o $(BIN_DIR)/hello $(OBJ_DIR)/monitor.o $(BUILD_DIR)/hello.o
 
 
 
