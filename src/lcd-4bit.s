@@ -10,6 +10,7 @@
   .include "zeropage.cfg"
   .include "acia.cfg"
 
+sys_lcd_init:
 lcd_init:
   PHA                   ;
   LDX #0                ; will be using X=0 repeatedly
@@ -92,7 +93,8 @@ lcd_init:
   STA (ZP_VIA_DDRA,x)   ; restore ddra from copy saved to stack
   PLA
   RTS
-
+  
+sys_lcd_clear:
 lcd_clear:
   JSR set_via1
   PHA
@@ -240,7 +242,7 @@ led_on:
 led_preserved:
   RTS
 
-
+sys_lcd_printchar:
 print_char:
   ; wrapper for original print_char. use current lcd positon
   ; to wrap if at the end of line 1 (16) or end of line 2 (56)
@@ -347,5 +349,22 @@ send_message_lcd_done:
   JSR lcd_instruction
 send_message_lcd_exit:
   PLY
+  PLA
+  RTS
+  
+init_display:
+  PHA
+  JSR lcd_clear
+  LDA #<lcd_message_startup
+  STA ZP_MESSAGE
+  LDA #>lcd_message_startup
+  STA ZP_MESSAGE+1
+  JSR send_message_lcd
+  LDA #$c               ; move to 2nd line on lcd
+  JSR lcd_instruction_nowait
+  LDA #$0               ;
+  JSR lcd_instruction
+  LDA $11               ; set lcd pos to 17 (first char of 2nd line)
+  STA LCDPOS
   PLA
   RTS
