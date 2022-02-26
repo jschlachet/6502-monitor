@@ -297,23 +297,23 @@ status_led_done:
 
 
 parse_command_dump:
+  ; use x as count of rows to print (stop at x==$10)
   PHA
   PHX
-  PHY
-  ; TODO for now bypass argument detection, it's buggy
-  JSR detect_args_1_nnnn
-  BCS parse_command_dump_addr_given
 
-  STZ ZP_POINTER
+  STZ ZP_POINTER            ; default to $0000
   STZ ZP_POINTER+1
-  JMP parse_command_dump_run
 
-parse_command_dump_addr_given:
-  JSR parse_args_1_nnnn ; store location in ZP_POINTER
+  JSR detect_args_1_nnnn
+  TXA
+  CMP #$00
+  BEQ parse_command_dump_run
+
+  JSR parse_args_1_nnnn     ; store location in ZP_POINTER
 
 parse_command_dump_run:
   ;
-  LDA #<message_read    ; print output header
+  LDA #<message_read        ; print output header
   STA ZP_MESSAGE
   LDA #>message_read
   STA ZP_MESSAGE+1
@@ -321,20 +321,21 @@ parse_command_dump_run:
   ;
   LDX #0
 dump_address_loop:
-  JSR print_memory_line
-  INX
-  CPX #$10              ; stop after 16 lines (256 bytes)
+  JSR print_memory_line     ; print one row of memory
+  INX                       ; increment row count
+  CPX #$10                  ; stop after 16 rows
   BNE dump_address_loop
-  PLY
   PLX
   PLA
+  JSR clear_input
   JMP option_done
 
 
 print_memory_line:
+  ; use y as count of bytes printed on line
   PHA
   PHY
-
+  PHX
   LDA ZP_POINTER+1
   JSR print_byte
   LDA ZP_POINTER
@@ -363,31 +364,27 @@ print_memory_line_loop:
   ADC #0
   STA ZP_POINTER+1
   ;
-  INY                   ; increment loop counter
-  CPY #$10              ; we are done when we hit $10
+  INY                       ; increment loop counter
+  CPY #$10                  ; we are done when we hit $10
   BNE print_memory_line_loop
 
-  JSR set_message_crlf  ; go to next line
+  JSR set_message_crlf      ; go to next line
   JSR send_message_serial
-
+  PLX
   PLY
   PLA
   RTS
 
 
 parse_command_load:
-  ;SEI						; set interupt disable                                     JSS
-  JSR set_message_crlf  ; go to next line
+  JSR set_message_crlf      ; go to next line
   JSR send_message_serial
   LDA #MODE_XMODEM_RECEIVE
   STA MODE
-  ;SEI
   JSR XModem
   ;CMP #(MODEM_RECEIVE_FAILED)
   ;BEQ parse_command_load
   STZ MODE
-  ;CLI
-  ;RTS
   JMP option_done
 
 
@@ -396,14 +393,14 @@ parse_command_load:
 ;
 parse_args_1_nnnn:
   ; digit 3 and digit 2 are low and high nibble of low byte
-  LDX #0
+  ; LDX #0
   LDA INPUT_ARGS+3
   JSR ascii_to_byte_low
   LDA INPUT_ARGS+2
   JSR ascii_to_byte_high
   STA ZP_POINTER
   ; digit 1 and digit 0 are low and high nibble of high byte
-  LDX #0
+  ; LDX #0
   LDA INPUT_ARGS+1
   JSR ascii_to_byte_low
   LDA INPUT_ARGS+0
@@ -415,14 +412,14 @@ parse_args_1_nnnn:
 detect_args_1_nnnn:
   PHA
   ; detect if there are args here. if all four positions are not NULL = yes
-  ; return results in carry flag (0=no, 1=yes)
-  LDA INPUT_ARGS
-  CMP #0                ; null
-  BEQ detect_args_1_nnnn_no
-  SEC
-  JMP detect_args_1_nnnn_exit
-detect_args_1_nnnn_no:
-  CLC                   ; set carry flag
+  ; return results in x (0=no, 1=yes). used carry but cmp affects this bit
+  LDA #$00 
+  TAX
+  SEC                       ; set carry flag (default)
+  LDA INPUT_ARGS            ; read first character of argument
+  CMP #$00                  ; null
+  BEQ detect_args_1_nnnn_exit
+  INX                       ; set x to 1
 detect_args_1_nnnn_exit:
   PLA
   RTS

@@ -225,24 +225,22 @@ init_ram_block_loop:
 
 clear_input:
   ; clear input variables, INPUT_COMMAND and INPUT_ARGS both 16 bytes
-  PHA
 
-  LDA #<INPUT_COMMAND
+  LDA #<INPUT_COMMAND       ; clear input command
   STA ZP_POINTER
   LDA #>INPUT_COMMAND
   STA ZP_POINTER+1
-  JSR clear_16bytes       ; clear input_command
+  JSR clear_16bytes
 
-  STZ INPUT_ARGS
-  STZ INPUT_ARGS+1
-  STZ INPUT_ARGS+2
-  STZ INPUT_ARGS+3
+  LDA #<INPUT_ARGS          ; clear input arguments
+  STA ZP_POINTER
+  LDA #>INPUT_ARGS
+  STA ZP_POINTER+1
+  JSR clear_16bytes
 
-  ; TODO not sure if this is effective
-  STZ ZP_POINTER          ; clear our pointer
+  STZ ZP_POINTER            ; clear pointer
   STZ ZP_POINTER+1
 
-  PLA
   RTS
 
 clear_16bytes:
