@@ -1,33 +1,9 @@
-;
-; VIA1 (right)
-;   Port A
-;           A0-A7 --> SN76489
-;   Port B
-;           B0    --> SN76489 /WE
-;           B1    --> SN76489 RDY
-;           B0-B1 --> SOUND
-;           B2-B7 --> unconnected
-;
-; VIA2 (left)
-;   Port A
-;           A0-A3 --> LCD D7..D0
-;           A4    --> LCD E
-;           A5    --> LCD RW
-;           A6    --> LCD RS
-;           A7    --> USER LED
-;   Port B
-;           B0-B7 --> unconnected
-;
-
   .setcpu "65C02"
-
 
   .include "acia.cfg"
   .include "lcd-4bit.cfg"
   .include "via.cfg"
   .include "zeropage.cfg"
-
-
 
   .code
 
@@ -40,11 +16,11 @@
 
 
 reset:
-  ldx #$ff
+  ldx #$ff                  ; initiatlize stack pointer
   txs
 
   jsr init_ram
-  jsr init_run_vector   ; initialize code at run location   (init to prompt_loop)
+  jsr init_run_vector       ; initialize code at run location   (init to prompt_loop)
 
   jsr init_via
 
@@ -53,9 +29,9 @@ reset:
   jsr set_via1
   jsr lcd_init
 
-  STZ LED_STATUS        ;
-  STZ MODE              ; monitor state 0=NONE
-  STZ LCDPOS            ;
+  STZ LED_STATUS            ;
+  STZ MODE                  ; monitor state 0=NONE
+  STZ LCDPOS                ;
 
   LDA #<INPUT_ARGS
   STA ZP_ARGS
@@ -67,13 +43,13 @@ reset:
   jsr set_message_startup
   jsr send_message_serial
 
- 
+  jsr init_display
+
 
 prompt_loop:
   jsr clear_input
   jsr show_prompt
-
-  cli                   ; clear interrupt (enable)
+  cli                       ; clear interrupt (enable)
   jsr loop
 
 init_via:
@@ -156,12 +132,11 @@ key_backtick_continue:
   CMP #$03              ; Control-C
   BNE perform_reset_continue
   JMP perform_reset
-  ;JMP perform_break
 perform_reset_continue:
 
   ; all other keys, ...
   JSR write_acia_buffer
-  JSR print_char
+  ;JSR print_char  ; display char on lcd 
 
   ; special keys are done.
   ; default action is to echo back
@@ -221,7 +196,7 @@ init_ram_done:
   RTS
 
 init_run_vector:
-  LDA #$4C              ; store opcode for JMP 
+  LDA #$4C              ; JMP 
   STA RUN_ADDR+0 
   LDA #<prompt_loop     ; store low byte of prompt_loop address
   STA RUN_ADDR+1
@@ -258,11 +233,14 @@ clear_input:
   STA ZP_POINTER+1
   JSR clear_16bytes       ; clear input_command
 
-  LDA #<INPUT_ARGS
-  STA ZP_POINTER
-  LDA #>INPUT_ARGS
-  STA ZP_POINTER+1
-  JSR clear_16bytes       ; clear input_args
+  STZ INPUT_ARGS
+  STZ INPUT_ARGS+1
+  STZ INPUT_ARGS+2
+  STZ INPUT_ARGS+3
+
+  ; TODO not sure if this is effective
+  STZ ZP_POINTER          ; clear our pointer
+  STZ ZP_POINTER+1
 
   PLA
   RTS

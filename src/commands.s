@@ -123,7 +123,7 @@ parse_command_status_continue:
   JMP parse_command_beep
 parse_command_beep_continue:
 
-  ;. beep
+  ; crash
   LDA #<COMMAND_CRASH
   STA ZP_COMMAND
   LDA #>COMMAND_CRASH
@@ -297,9 +297,21 @@ status_led_done:
 
 
 parse_command_dump:
-  LDX #0
+  PHA
+  PHX
+  PHY
+  ; TODO for now bypass argument detection, it's buggy
+  JSR detect_args_1_nnnn
+  BCS parse_command_dump_addr_given
+
   STZ ZP_POINTER
   STZ ZP_POINTER+1
+  JMP parse_command_dump_run
+
+parse_command_dump_addr_given:
+  JSR parse_args_1_nnnn ; store location in ZP_POINTER
+
+parse_command_dump_run:
   ;
   LDA #<message_read    ; print output header
   STA ZP_MESSAGE
@@ -307,17 +319,20 @@ parse_command_dump:
   STA ZP_MESSAGE+1
   JSR send_message_serial
   ;
+  LDX #0
 dump_address_loop:
-  PHX
   JSR print_memory_line
-  PLX
   INX
-  CPX #$20              ; stop after 32 lines
+  CPX #$10              ; stop after 16 lines (256 bytes)
   BNE dump_address_loop
+  PLY
+  PLX
+  PLA
   JMP option_done
 
 
 print_memory_line:
+  PHA
   PHY
 
   LDA ZP_POINTER+1
@@ -356,6 +371,7 @@ print_memory_line_loop:
   JSR send_message_serial
 
   PLY
+  PLA
   RTS
 
 
@@ -394,6 +410,21 @@ parse_args_1_nnnn:
   JSR ascii_to_byte_high
   STA ZP_POINTER+1
   ;
+  RTS
+
+detect_args_1_nnnn:
+  PHA
+  ; detect if there are args here. if all four positions are not NULL = yes
+  ; return results in carry flag (0=no, 1=yes)
+  LDA INPUT_ARGS
+  CMP #0                ; null
+  BEQ detect_args_1_nnnn_no
+  SEC
+  JMP detect_args_1_nnnn_exit
+detect_args_1_nnnn_no:
+  CLC                   ; set carry flag
+detect_args_1_nnnn_exit:
+  PLA
   RTS
 
 ; 2nd argument 1 byte value placed into ARG_VALUE

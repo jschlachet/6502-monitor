@@ -117,6 +117,7 @@ lcd_clear:
   PLA
   STA (ZP_VIA_DDRA,x)   ; restore ddra from copy saved to stack
 
+  STZ LCDPOS            ; reset lcd position
   PLX
   PLA
   RTS
