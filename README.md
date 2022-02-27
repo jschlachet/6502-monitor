@@ -30,6 +30,7 @@ Monitor commands
 * `led` will toggle the onboard LED 
 * `load` will start the xmodem protocol receiver, so you can upload a program to the computer
 * `read addr` will display 16 bytes starting at the address specified 
+* `reboot` will perform a soft reset of the system
 * `run` will invoke the program at `$3000` (the system's default program address)
 
 
