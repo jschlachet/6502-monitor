@@ -36,6 +36,7 @@ Monitor commands
 * `read addr` will display 16 bytes starting at the address specified 
 * `reboot` will perform a soft reset of the system
 * `run` will invoke the program at `$3000` (the system's default program address)
+* `write addr value` will write the byte `value` in the location `addr`. An example is `write 3010 ff`, the results of which can be seen from `dump 3000` or `read 3010` output
 
 
 ## Inspirations
