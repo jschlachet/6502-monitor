@@ -1,33 +1,9 @@
-;
-; VIA1 (right)
-;   Port A
-;           A0-A7 --> SN76489
-;   Port B
-;           B0    --> SN76489 /WE
-;           B1    --> SN76489 RDY
-;           B0-B1 --> SOUND
-;           B2-B7 --> unconnected
-;
-; VIA2 (left)
-;   Port A
-;           A0-A3 --> LCD D7..D0
-;           A4    --> LCD E
-;           A5    --> LCD RW
-;           A6    --> LCD RS
-;           A7    --> USER LED
-;   Port B
-;           B0-B7 --> unconnected
-;
-
   .setcpu "65C02"
-
 
   .include "acia.cfg"
   .include "lcd-4bit.cfg"
   .include "via.cfg"
   .include "zeropage.cfg"
-
-
 
   .code
 
@@ -35,17 +11,16 @@
   .include "lcd-4bit.s"
   .include "via.s"
   .include "sn76489.s"
+  .include "functions.s"
 
-  .global prompt_loop
-  .global send_message_serial
 
 
 reset:
-  ldx #$ff
+  ldx #$ff                  ; initiatlize stack pointer
   txs
 
   jsr init_ram
-  jsr init_run_vector   ; initialize code at run location   (init to prompt_loop)
+  jsr init_run_vector       ; initialize code at run location   (init to prompt_loop)
 
   jsr init_via
 
@@ -54,9 +29,9 @@ reset:
   jsr set_via1
   jsr lcd_init
 
-  STZ LED_STATUS        ;
-  STZ MODE              ; monitor state 0=NONE
-  STZ LCDPOS            ;
+  STZ LED_STATUS            ;
+  STZ MODE                  ; monitor state 0=NONE
+  STZ LCDPOS                ;
 
   LDA #<INPUT_ARGS
   STA ZP_ARGS
@@ -68,12 +43,13 @@ reset:
   jsr set_message_startup
   jsr send_message_serial
 
- 
+  jsr init_display
+
 
 prompt_loop:
+  jsr clear_input
   jsr show_prompt
-
-  cli                   ; clear interrupt (enable)
+  cli                       ; clear interrupt (enable)
   jsr loop
 
 init_via:
@@ -156,12 +132,11 @@ key_backtick_continue:
   CMP #$03              ; Control-C
   BNE perform_reset_continue
   JMP perform_reset
-  ;JMP perform_break
 perform_reset_continue:
 
   ; all other keys, ...
   JSR write_acia_buffer
-  JSR print_char
+  ;JSR print_char  ; display char on lcd 
 
   ; special keys are done.
   ; default action is to echo back
@@ -197,26 +172,31 @@ irq_end:
 
 
 init_ram:
-  STZ $00             ; zero page
-  STZ $01
+  STZ ZP_POINTER        ; $0000 zero page
+  STZ ZP_POINTER+1
   JSR init_ram_block
-  ; LDA #$01            ; $0100 ()
-  ; STA $01
-  ; JSR init_ram_block
-  LDA #$02            ; $0200 (acia buffer)
-  STA $01
+
+  LDA #$02              ; $0200 (acia buffer)
+  STA ZP_POINTER+1
   JSR init_ram_block
-  LDA #$03            ; $0300 (global variables)
-  STA $01
+
+  LDA #$03              ; $0300 (global variables)
+  STA ZP_POINTER+1
   JSR init_ram_block
-  LDA #$30            ; $3000 (user program)
-  STA $01
-  JSR init_ram_block
+
+  LDX #$30              ; $3000 - $3fff (user program space)
+init_ram_loop:          ;
+  STX ZP_POINTER+1      ;
+  JSR init_ram_block    ;
+  INX                   ; next page
+  CPX #$40              ; stop if we've reached $4000
+  BNE init_ram_loop     ;
+
 init_ram_done:
   RTS
 
 init_run_vector:
-  LDA #$4C              ; store opcode for JMP 
+  LDA #$4C              ; JMP 
   STA RUN_ADDR+0 
   LDA #<prompt_loop     ; store low byte of prompt_loop address
   STA RUN_ADDR+1
@@ -226,16 +206,54 @@ init_run_vector:
 
   ; Modified from http://www.6502.org/source/general/clearmem.htm
 init_ram_block:
+  PHA
+  PHX
+  PHY
   LDA #$ff
   TAX
   LDA #$00                ; Set up zero value
   TAY                     ; Initialize index pointer
-init_ram_loop:
-  STA ($00),Y             ; Clear memory location
+init_ram_block_loop:
+  STA (ZP_POINTER),Y             ; Clear memory location
   INY                     ; Advance index pointer
   DEX                     ; Decrement counter
-  BNE init_ram_loop       ; Not zero, continue checking
+  BNE init_ram_block_loop ; Not zero, continue checking
+  PLY
+  PLX
+  PLA
   RTS                     ; Return
+
+clear_input:
+  ; clear input variables, INPUT_COMMAND and INPUT_ARGS both 16 bytes
+
+  LDA #<INPUT_COMMAND       ; clear input command
+  STA ZP_POINTER
+  LDA #>INPUT_COMMAND
+  STA ZP_POINTER+1
+  JSR clear_16bytes
+
+  LDA #<INPUT_ARGS          ; clear input arguments
+  STA ZP_POINTER
+  LDA #>INPUT_ARGS
+  STA ZP_POINTER+1
+  JSR clear_16bytes
+
+  STZ ZP_POINTER            ; clear pointer
+  STZ ZP_POINTER+1
+
+  RTS
+
+clear_16bytes:
+  PHY
+  LDA #$00                ; store zero in A and Y
+  TAY                     ;
+clear_16bytes_loop:
+  STA (ZP_POINTER),y
+  INY
+  CPY #$10
+  BNE clear_16bytes_loop
+  PLY
+  RTS
 
   
   .include "xmodem-crc.s"

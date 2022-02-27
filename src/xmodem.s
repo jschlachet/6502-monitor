@@ -357,9 +357,17 @@ Prtgood1:
 		inx
 		bne	Prtgood1
 Prtgood2:
+
+		JSR lcd_clear
+		LDA #<lcd_message_upload_done
+		STA ZP_MESSAGE
+		LDA #>lcd_message_upload_done
+		STA ZP_MESSAGE+1
+		JSR send_message_lcd
+		
 		rts
 GoodMsg:
-		.byte 	"Upload Successful!"
+		.byte 	"Upload complete."
 		.BYTE  	CR, LF
 		.byte   0
 ;
