@@ -1,9 +1,13 @@
 # 6502 Monitor
 
-Welcome to my homebrew computer's monitor.
+A simple monitor for my homebrew computer. 
 
-The hardware design is largely based on Garth Wilson's [6502 Primer](https://wilsonminesco.com/6502primer/). The hardware is what I'm calling [6502-board-rev2](https://github.com/jschlachet/6502-board-rev2).
 
+## Hardware Requirements
+
+The monitor is custon designed for my [6502-board-rev2](https://github.com/jschlachet/6502-board-rev2) computer. Its design is largely based on Garth Wilson's [6502 Primer](https://wilsonminesco.com/6502primer/). 
+
+Interaction is through the serial port via the ACIA headers.  I'm using a [DSD Tech SH-U09C5 USB to TTL](https://www.amazon.com/DSD-TECH-SH-U09C5-Converter-Support/dp/B07WX2DSVB) adapter.
 
 ## Software Requirements
 1. [cc65](https://cc65.github.io) for its assembler and linker.
@@ -33,6 +37,13 @@ Monitor commands
 * `reboot` will perform a soft reset of the system
 * `run` will invoke the program at `$3000` (the system's default program address)
 
+
+## Inspirations
+
+Some other projects from which I've gained inspiration and guidance
+
+* Dawid Buchwald's [DB6502](https://github.com/dbuchwald/6502)
+* Kris Foster's [krisos](https://github.com/transitorykris/krisos)
 
 
 ## Hardware Notes

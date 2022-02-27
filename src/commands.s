@@ -469,15 +469,12 @@ parse_command_jmp:
 
 
 parse_command_run:
-  ; STZ ZP_POINTER
-  ; STZ ZP_POINTER+1
-
   LDA #<message_jmp    ; print output header
   STA ZP_MESSAGE
   LDA #>message_jmp
   STA ZP_MESSAGE+1
   JSR send_message_serial
-
+  ;
   LDA #<RUN_ADDR
   STA ZP_POINTER
   LDA #>RUN_ADDR
@@ -492,7 +489,7 @@ parse_command_jmp_return:
   LDA #>message_jmp_return
   STA ZP_MESSAGE+1
   JSR send_message_serial
-
+  ;
   JSR print_memory_line
   JMP option_done
 
