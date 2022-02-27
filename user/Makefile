@@ -28,3 +28,6 @@ blink: $(OBJ_DIR)/monitor.o
 	$(LD65_BINARY) $(LD65_FLAGS) -o $(BIN_DIR)/blink $(OBJ_DIR)/monitor.o $(BUILD_DIR)/blink.o
 
 
+clean:
+	/bin/rm -f $(BIN_DIR)/* $(BUILD_DIR)/* 
+
