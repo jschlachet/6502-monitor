@@ -125,14 +125,10 @@ key_backspace_continue:
   CMP #MODE_USERINPUT       ;
   BEQ key_enter_userinput   ;
   
-  ; LDA #'e'                  ; debug
-  ; JSR sys_lcd_printchar     ; debug
   PLA                       ; restore character
   JMP key_enter             ; then process enter normally
 
 key_enter_userinput:        ; enter key during userinput
-  ; LDA #'E'
-  ; JSR sys_lcd_printchar
   LDA #MODE_USERINPUT_DONE  ; set userinput done flag
   STA MODE
   LDA #NULL                 ; add null to buffer
@@ -153,7 +149,6 @@ perform_reset_continue:
 
   ; all other keys, ...
   JSR write_acia_buffer
-  ;JSR print_char  ; display char on lcd 
 
   ; special keys are done.
   ; default action is to echo back
@@ -166,7 +161,7 @@ perform_reset_continue:
   BCC irq_end
 
   sys_serial_print message_bufferfull
-  ; ; less than 0x0f (15) chars left, push rts down
+  ; less than 0x0f (15) chars left, push rts down
   LDA #$01
   STA ACIA_COMMAND
   ; TODO what else should we do here? maybe soft reset or clear buffer.
