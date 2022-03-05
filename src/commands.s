@@ -16,10 +16,6 @@ COMMAND_STATUS:   .asciiz "status"
 COMMAND_WRITE:    .asciiz "write"
 COMMAND_VERSION:  .asciiz "version"
 
-NULL    = $00
-EQUAL   = $00
-LT      = $ff
-GT      = $01
 
 
 MODEM_RECEIVE_FAILED    = $00

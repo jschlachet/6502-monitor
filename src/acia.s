@@ -155,6 +155,27 @@ acia_buffer_diff:       ; subtract buffer pointers. if there's a difference then
   SBC ACIA_RD_PTR
   RTS
 
+
+copy_buffer_to_input_args:
+  PHA
+  PHY
+  LDA #0                    ; initialize y to 0
+  TAY                       ;
+  JSR acia_buffer_diff      ; is buffer empty?
+  BEQ copy_buffer_to_input_args_done
+copy_buffer_to_input_args_loop:
+  JSR read_acia_buffer      ; read char from buffer
+  STA INPUT_ARGS,y
+  INY
+  JSR acia_buffer_diff      ; is buffer empty?
+  BNE copy_buffer_to_input_args_loop
+
+copy_buffer_to_input_args_done:
+  PLY
+  PLA
+  RTS
+
+
 perform_reset:
 ;   JMP reset
 ; perform_break:
@@ -229,6 +250,8 @@ key_enter_exit:           ; ready to exit
   PLX
   PLA
   JMP irq_reset_end_prompt
+
+
 
 ;
 ; take user input, truncates it at the first space
