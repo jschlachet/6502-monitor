@@ -1,5 +1,7 @@
 ; test "hello world" which blinks all pins on port a of via 2
   .include "functions.cfg"
+  .include "macros.cfg"
+
 
   .segment "USER"
 
@@ -7,8 +9,7 @@
   .import sys_led_on
   .import sys_led_off
 
-  .word $3000               ; put origin at the top of the output binary file
-  .org $3000
+  sys_start_userprogram
 
   JSR sys_led_on
 
@@ -18,7 +19,7 @@
 
   JSR sys_led_off
 
-  JMP prompt_loop
+  sys_end_userprogram
 
 
 delay_ay:
