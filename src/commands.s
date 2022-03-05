@@ -259,18 +259,11 @@ parse_command_status:
   BIT LED_STATUS
   BMI status_led_on
 status_led_off:
-  LDA #<message_led_off
-  STA ZP_MESSAGE
-  LDA #>message_led_off
-  STA ZP_MESSAGE+1
+  sys_serial_print message_led_off
   JMP status_led_done
 status_led_on:
-  LDA #<message_led_on
-  STA ZP_MESSAGE
-  LDA #>message_led_on
-  STA ZP_MESSAGE+1
+  sys_serial_print message_led_on
 status_led_done:
-  JSR send_message_serial
   JMP option_done
 
 
