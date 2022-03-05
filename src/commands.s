@@ -23,6 +23,7 @@ MODEM_RECEIVE_SUCCESS   = $01
 MODEM_RECEIVE_CANCELLED = $02
 
   .include "zeropage.cfg"
+  .include "macros.cfg"
   .include "xmodem.s"
   .include "sn76489.s"
 
@@ -208,19 +209,11 @@ parse_command_dump_continue:
 parse_command_load_continue:
 
   ; default - unknown
-  LDA #<message_unknown
-  STA ZP_MESSAGE
-  LDA #>message_unknown
-  STA ZP_MESSAGE+1
-  JSR send_message_serial
+  sys_serial_print message_unknown
   JMP option_done
 
 parse_command_help:
-  LDA #<message_help
-  STA ZP_MESSAGE
-  LDA #>message_help
-  STA ZP_MESSAGE+1
-  JSR send_message_serial
+  sys_serial_print message_help
   JMP option_done
 
 parse_command_beep:
@@ -232,11 +225,7 @@ parse_command_crash:
   JMP option_done
 
 parse_command_version:
-  LDA #<message_version
-  STA ZP_MESSAGE
-  LDA #>message_version
-  STA ZP_MESSAGE+1
-  JSR send_message_serial
+  sys_serial_print message_version
   JMP option_done
 
 
@@ -258,22 +247,15 @@ parse_command_led:      ; toggle via 2, port b, pin 7
   PLA                   ; restore ddr and send
   STA (ZP_VIA_DDRA,x)
 
-  LDA #<message_led     ; send toggle message
-  STA ZP_MESSAGE
-  LDA #>message_led
-  STA ZP_MESSAGE+1
-  JSR send_message_serial
+  ; send toggle message
+  sys_serial_print message_led
   ;
   JMP option_done
 
 
 parse_command_status:
   ; assuming led pin is in output mode
-  LDA #<message_status
-  STA ZP_MESSAGE
-  LDA #>message_status
-  STA ZP_MESSAGE+1
-  JSR send_message_serial
+  sys_serial_print message_status
   BIT LED_STATUS
   BMI status_led_on
 status_led_off:
@@ -309,11 +291,8 @@ parse_command_dump:
 
 parse_command_dump_run:
   ;
-  LDA #<message_read        ; print output header
-  STA ZP_MESSAGE
-  LDA #>message_read
-  STA ZP_MESSAGE+1
-  JSR send_message_serial
+  ; print output header
+  sys_serial_print message_read
   ;
   LDX #0
 dump_address_loop:
@@ -364,8 +343,7 @@ print_memory_line_loop:
   CPY #$10                  ; we are done when we hit $10
   BNE print_memory_line_loop
 
-  JSR set_message_crlf      ; go to next line
-  JSR send_message_serial
+  sys_serial_print message_crlf
   PLX
   PLY
   PLA
@@ -373,8 +351,7 @@ print_memory_line_loop:
 
 
 parse_command_load:
-  JSR set_message_crlf      ; go to next line
-  JSR send_message_serial
+  sys_serial_print message_crlf
   LDA #MODE_XMODEM_RECEIVE
   STA MODE
   JSR XModem
@@ -437,11 +414,8 @@ parse_command_read:
   STZ ZP_POINTER
   STZ ZP_POINTER+1
 
-  LDA #<message_read    ; print output header
-  STA ZP_MESSAGE
-  LDA #>message_read
-  STA ZP_MESSAGE+1
-  JSR send_message_serial
+  ; print output header
+  sys_serial_print message_read
 
   JSR parse_args_1_nnnn
 
@@ -453,11 +427,8 @@ parse_command_jmp:
   STZ ZP_POINTER
   STZ ZP_POINTER+1
 
-  LDA #<message_jmp    ; print output header
-  STA ZP_MESSAGE
-  LDA #>message_jmp
-  STA ZP_MESSAGE+1
-  JSR send_message_serial
+  ; print output header
+  sys_serial_print message_jmp
 
   JSR parse_args_1_nnnn
   LDX #$00
@@ -465,11 +436,8 @@ parse_command_jmp:
 
 
 parse_command_run:
-  LDA #<message_jmp    ; print output header
-  STA ZP_MESSAGE
-  LDA #>message_jmp
-  STA ZP_MESSAGE+1
-  JSR send_message_serial
+  ; print output header
+  sys_serial_print message_jmp
   ;
   LDA #<RUN_ADDR
   STA ZP_POINTER
@@ -480,11 +448,8 @@ parse_command_run:
 
 
 parse_command_jmp_return:
-  LDA #<message_jmp_return    ; print output header
-  STA ZP_MESSAGE
-  LDA #>message_jmp_return
-  STA ZP_MESSAGE+1
-  JSR send_message_serial
+  ; print output header
+  sys_serial_print message_jmp_return
   ;
   JSR print_memory_line
   JMP option_done

@@ -5,6 +5,7 @@
   .include "via.cfg"
   .include "zeropage.cfg"
   .include "globals.cfg"
+  .include "macros.cfg"
 
   .code
 
@@ -41,8 +42,7 @@ reset:
 
   jsr init_acia
 
-  jsr set_message_startup
-  jsr send_message_serial
+  sys_serial_print message_startup
 
   jsr init_display
 
@@ -81,10 +81,8 @@ init_via:
   RTS
 
 show_prompt:
-  JSR set_message_crlf
-  JSR send_message_serial
-  JSR set_message_prompt
-  JSR send_message_serial
+  sys_serial_print message_crlf
+  sys_serial_print message_prompt
   RTS
 
 loop:
@@ -167,8 +165,7 @@ perform_reset_continue:
   CMP #$f0
   BCC irq_end
 
-  JSR set_message_bufferfull
-  JSR send_message_serial
+  sys_serial_print message_bufferfull
   ; ; less than 0x0f (15) chars left, push rts down
   LDA #$01
   STA ACIA_COMMAND

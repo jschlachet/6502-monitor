@@ -54,69 +54,6 @@ send_message_serial_done:
   PLA
   RTS
 
-set_message_empty:
-  PHA
-  LDA #<message_empty
-  STA $08
-  LDA #>message_empty
-  STA $09
-  PLA
-  RTS
-
-set_message_startup:
-  PHA
-  LDA #<message_startup
-  STA $08
-  LDA #>message_startup
-  STA $09
-  PLA
-  RTS
-
-set_message_buffer:
-  PHA
-  LDA #<message_buffer
-  STA $08
-  LDA #>message_buffer
-  STA $09
-  PLA
-  RTS
-
-set_message_crlf:
-  PHA
-  LDA #<message_crlf
-  STA $08
-  LDA #>message_crlf
-  STA $09
-  PLA
-  RTS
-
-set_message_bufferfull:
-  PHA
-  LDA #<message_bufferfull
-  STA $08
-  LDA #>message_bufferfull
-  STA $09
-  PLA
-  RTS
-
-set_message_prompt:
-  PHA
-  LDA #<message_prompt
-  STA $08
-  LDA #>message_prompt
-  STA $09
-  PLA
-  RTS
-
-set_message_help:
-  PHA
-  LDA #<message_help
-  STA $08
-  LDA #>message_help
-  STA $09
-  PLA
-  RTS
-
 
 ;
 delay_6551:
@@ -180,11 +117,7 @@ perform_reset:
 ;   JMP reset
 ; perform_break:
   PHA
-  LDA #<message_break
-  STA $08
-  LDA #>message_break
-  STA $09
-  JSR send_message_serial
+  sys_serial_print message_break
   PLA
   JMP prompt_loop
 
@@ -278,8 +211,7 @@ copy_args_loop:
   STA INPUT_COMMAND,Y      ; put null where the space was
   INY                   ; forward to first char of arguments
 
-  JSR set_message_crlf
-  JSR send_message_serial
+  sys_serial_print message_crlf 
 
   LDX #0                ; position in args
 copy_to_args_loop:
@@ -320,8 +252,7 @@ print_buffer:
   ;
   JSR acia_buffer_diff
   BEQ print_buffer_empty
-  JSR set_message_buffer      ; set message to output
-  JSR send_message_serial            ; send message
+  sys_serial_print message_buffer    ;
 read_acia_buffer_loop:
   JSR read_acia_buffer        ; read char from buffer
   STA ACIA_DATA               ; output to serial console
@@ -332,8 +263,7 @@ read_acia_buffer_loop:
   JMP read_acia_buffer_loop
 read_acia_buffer_done:
   ;
-  JSR set_message_crlf        ; set message to CRLF
-  JSR send_message_serial
+  sys_serial_print message_crlf
 
 print_buffer_end:
   PLX
@@ -341,6 +271,5 @@ print_buffer_end:
   RTS
 
 print_buffer_empty:
-  JSR set_message_empty
-  JSR send_message_serial
+  sys_serial_print message_empty
   JMP print_buffer_end
