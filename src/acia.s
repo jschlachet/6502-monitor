@@ -4,6 +4,7 @@
 
   .include "commands.s"
   .include "zeropage.cfg"
+  .include "globals.cfg"
 
 init_acia:
   PHA
@@ -94,22 +95,28 @@ acia_buffer_diff:       ; subtract buffer pointers. if there's a difference then
 
 
 copy_buffer_to_input_args:
-  PHA
+  ; copy acia buffer to input_args
+  ; assumptions
+  ; - both are 256 bytes
+  ; - acia buffer still holds input string
+  ; - we can clobber accumulator
   PHY
-  LDA #0                    ; initialize y to 0
-  TAY                       ;
-  JSR acia_buffer_diff      ; is buffer empty?
-  BEQ copy_buffer_to_input_args_done
-copy_buffer_to_input_args_loop:
+
+  JSR acia_buffer_diff      ; is buffer empty? if so just exit
+  BEQ cbtia_done
+
+  LDY #0                    ; initialize y to 0
+cbtia_loop:
   JSR read_acia_buffer      ; read char from buffer
   STA INPUT_ARGS,y
   INY
   JSR acia_buffer_diff      ; is buffer empty?
-  BNE copy_buffer_to_input_args_loop
+  BNE cbtia_loop
+cbtia_done:
+  LDA #NULL                 ; finish with NULL
+  STA INPUT_ARGS,y
 
-copy_buffer_to_input_args_done:
   PLY
-  PLA
   RTS
 
 

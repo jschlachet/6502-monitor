@@ -8,11 +8,11 @@
   .import prompt_loop
   .import send_message_serial
 
-  .import sys_lcd_init
-  .import sys_lcd_clear
-  .import sys_lcd_printchar
+  ; .import sys_lcd_init
+  ; .import sys_lcd_clear
+  ; .import sys_lcd_printchar
   .import sys_user_input
-  .import copy_buffer_to_input_args
+  ; .import copy_buffer_to_input_args
 
 
   sys_start_userprogram
@@ -22,11 +22,8 @@
   JSR sys_user_input              ; user input
 
   sys_serial_print message_test2
-
-  JSR copy_buffer_to_input_args   ; debug
-
   sys_serial_print INPUT_ARGS
- 
+
   sys_end_userprogram
 
 
