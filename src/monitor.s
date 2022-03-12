@@ -4,6 +4,8 @@
   .include "lcd-4bit.cfg"
   .include "via.cfg"
   .include "zeropage.cfg"
+  .include "globals.cfg"
+  .include "macros.cfg"
 
   .code
 
@@ -40,8 +42,7 @@ reset:
 
   jsr init_acia
 
-  jsr set_message_startup
-  jsr send_message_serial
+  sys_serial_print message_startup
 
   jsr init_display
 
@@ -80,10 +81,8 @@ init_via:
   RTS
 
 show_prompt:
-  JSR set_message_crlf
-  JSR send_message_serial
-  JSR set_message_prompt
-  JSR send_message_serial
+  sys_serial_print message_crlf
+  sys_serial_print message_prompt
   RTS
 
 loop:
@@ -119,10 +118,24 @@ key_escape_continue:
   JMP key_backspace
 key_backspace_continue:
 
-  CMP #$0d              ; enter
+  PHA
+  CMP #$0d                  ; enter
   BNE key_enter_continue
-  JMP key_enter
+  LDA MODE                  ; are we currently in userinput mode?
+  CMP #MODE_USERINPUT       ;
+  BEQ key_enter_userinput   ;
+  
+  PLA                       ; restore character
+  JMP key_enter             ; then process enter normally
+
+key_enter_userinput:        ; enter key during userinput
+  LDA #MODE_USERINPUT_DONE  ; set userinput done flag
+  STA MODE
+  LDA #NULL                 ; add null to buffer
+  JSR write_acia_buffer
+
 key_enter_continue:
+  PLA
 
   CMP #$60              ; backtick
   BNE key_backtick_continue
@@ -136,7 +149,6 @@ perform_reset_continue:
 
   ; all other keys, ...
   JSR write_acia_buffer
-  ;JSR print_char  ; display char on lcd 
 
   ; special keys are done.
   ; default action is to echo back
@@ -148,9 +160,8 @@ perform_reset_continue:
   CMP #$f0
   BCC irq_end
 
-  JSR set_message_bufferfull
-  JSR send_message_serial
-  ; ; less than 0x0f (15) chars left, push rts down
+  sys_serial_print message_bufferfull
+  ; less than 0x0f (15) chars left, push rts down
   LDA #$01
   STA ACIA_COMMAND
   ; TODO what else should we do here? maybe soft reset or clear buffer.
