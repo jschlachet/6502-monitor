@@ -317,6 +317,10 @@ print_memory_line:
   JSR delay_6551
 
   LDY #0
+  LDA ZP_POINTER        ; preserve pointer address because we need to traverse it twice
+  STA TEMP_VALUE_LO     ;
+  LDA ZP_POINTER+1      ;
+  STA TEMP_VALUE_HI     ;
 print_memory_line_loop:
   LDA (ZP_POINTER)
   JSR print_byte        ; print this byte
@@ -336,10 +340,51 @@ print_memory_line_loop:
   CPY #$10                  ; we are done when we hit $10
   BNE print_memory_line_loop
 
+  JSR vertical_divider
+  LDY #0
+  LDA TEMP_VALUE_LO         ; restore pointer to beginning of this line
+  STA ZP_POINTER            ;
+  LDA TEMP_VALUE_HI         ;
+  STA ZP_POINTER+1          ;
+contents_loop:
+  LDA (ZP_POINTER)
+  JSR print_byte_contents
+  ; now increment pointer
+  CLC
+  LDA ZP_POINTER
+  ADC #1
+  STA ZP_POINTER
+  LDA ZP_POINTER+1
+  ADC #0
+  STA ZP_POINTER+1
+  ;
+  INY                       ; increment loop counter
+  CPY #$10                  ; we are done when we hit $10
+  BNE contents_loop
+  JSR vertical_divider      ; |
+
   sys_serial_print message_crlf
   PLX
   PLY
   PLA
+  RTS
+
+vertical_divider:
+  LDA #'|'
+  STA ACIA_DATA
+  JSR delay_6551
+  RTS
+print_byte_contents:
+  CMP #$20 ; space
+  BCC pbc_unprintable
+  CMP #$7E ; tilde (the last printable char)
+  BCS pbc_unprintable
+  JMP pbc_output
+pbc_unprintable:
+  LDA #'.'
+pbc_output:
+  STA ACIA_DATA
+  JSR delay_6551
   RTS
 
 
