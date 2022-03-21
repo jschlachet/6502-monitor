@@ -13,7 +13,7 @@ OBJ_DIR=../../obj
 
 MONITOR_OBJ=$(OBJ_DIR)/monitor.o
 
-all: hello blink input
+all: hello blink input spi
 
 # general rule for building object from source
 $(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.s 
