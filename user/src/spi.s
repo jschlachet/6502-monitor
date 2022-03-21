@@ -51,15 +51,15 @@ VIA3_REG1  = VIA3+15 ; PORTA without handshake
   LDA VIA3_PORTA
   ORA #%00000100            ; set pa2 high
   STA VIA3_PORTA
+  JSR small_delay
+  JSR small_delay
+  JSR small_delay
+
 .endmacro
 
 
-MAC_1 = $11
-MAC_2 = $22
-MAC_3 = $33
-MAC_4 = $44
-MAC_5 = $55
-MAC_6 = $66
+
+ENC28J60_REG_ECON1_DFLTS = %000000000 ; 
 
 ; instructions              ; descr                     5 bit arg   byte 1 and following
 ENC28J60_RCR    = %00000000 ; read control register     address     N/A
@@ -97,10 +97,10 @@ ENC28J60_REG_MAMXFLH  = $0b
 ENC28J60_REG_EREVID   = $12
 
 
-BSEL_BANK3 = %00000011
-BSEL_BANK2 = %00000010
-BSEL_BANK1 = %00000001
-BSEL_BANK0 = %00000000
+BSEL_BANK3 = $03 ; %00000011
+BSEL_BANK2 = $02 ; %00000010
+BSEL_BANK1 = $01 ; %00000001
+BSEL_BANK0 = $00 ; %00000000
 
 
 
@@ -146,6 +146,7 @@ ERXFCON_BCEN        = %00000001
 
 
 
+
   .import prompt_loop
   .import send_message_serial
 
@@ -153,8 +154,8 @@ ERXFCON_BCEN        = %00000001
   sys_start_userprogram
 
   sys_serial_print message_spi_start
-  JSR spi_init
 
+  JSR spi_init
   JSR get_rev_id
   
   sys_serial_print message_spi_end
@@ -162,14 +163,20 @@ ERXFCON_BCEN        = %00000001
   sys_end_userprogram
 
 
+; MAC ADDRESS
+mac_address: .byte $11, $22, $33, $44, $55, $66
+;
+
 
 get_rev_id:
-  LDX #BSEL_BANK3
-  JSR select_bank
+  LDA #BSEL_BANK3
+  JSR select_bank                           ; 0x5F
   ENC28J60_SELECTED
-  LDA #(ENC28J60_RCR|ENC28J60_REG_EREVID)
+  LDA #(ENC28J60_RCR|ENC28J60_REG_EREVID)   ; 0x12
+  JSR enc28j60_write_byte
+  ;
   JSR enc28j60_read_byte
-  JSR enc28j60_read_byte
+ ;
   ENC28J60_UNSELECTED
 
 
@@ -212,7 +219,7 @@ spi_init:
   ; 3. ERXND low    (receive buffer end)
   ; 4. ERXND high
 
-  LDX #BSEL_BANK0
+  LDA #BSEL_BANK0
   JSR select_bank
    
   ENC28J60_SELECTED
@@ -237,7 +244,7 @@ spi_init:
   ; by writing to the ERXFCON register. See Section 8.0 "Receive 
   ; Filters" for information on how to configure it.
 
-  LDX #BSEL_BANK1
+  LDA #BSEL_BANK1
   JSR select_bank
   ENC28J60_SELECTED
   ; select erxst low byte
@@ -255,7 +262,7 @@ spi_init:
   ; frames. If using full duplex, most applications should also set 
   ; TXPAUS and RXPAUS to allow IEEE defined flow control to function.
 
-  LDX #BSEL_BANK2
+  LDA #BSEL_BANK2
   JSR select_bank
   ENC28J60_SELECTED
   ; select macon1 low byte
@@ -368,26 +375,24 @@ spi_init:
 
   ENC28J60_SELECTED
   ; set register bank
-  LDX #BSEL_BANK3
+  LDA #BSEL_BANK3
   JSR select_bank
-  ;
-  LDA #MAC_5
+  LDA mac_address+4 
   JSR enc28j60_write_byte
-  LDA #MAC_6
+  LDA mac_address+5
   JSR enc28j60_write_byte
-  LDA #MAC_3
+  LDA mac_address+2 
   JSR enc28j60_write_byte
-  LDA #MAC_4
+  LDA mac_address+3 
   JSR enc28j60_write_byte
-  LDA #MAC_1
+  LDA mac_address
   JSR enc28j60_write_byte
-  LDA #MAC_2
+  LDA mac_address+1 
   JSR enc28j60_write_byte
   ;
   ENC28J60_UNSELECTED
-
-sys_serial_print message_enc28j60_init
-RTS
+  sys_serial_print message_enc28j60_init
+  RTS
 
 
 ; ============================================================================================================
@@ -396,11 +401,13 @@ RTS
 
 
 select_bank:
+  PHA
   ; bank number in X
   ENC28J60_SELECTED
   LDA #(ENC28J60_WCR|ENC28J60_REG_ECON1)  ; write econ1
   JSR enc28j60_write_byte
-  TXA
+  PLA
+  ORA #ENC28J60_REG_ECON1_DFLTS
   JSR enc28j60_write_byte
   ENC28J60_UNSELECTED
   RTS
@@ -412,8 +419,7 @@ enc28j60_read_byte:
   LDX #$08
 
 erb_loop:
-  INC VIA3_PORTA            ; pulse clock
-  DEC VIA3_PORTA
+  JSR enc28j60_clock_pulse
   
   BIT VIA3_PORTA            ; read pa7 on via3 (MOSI) [bit 7 goes to N)
   BMI erb_bit_one
@@ -446,35 +452,33 @@ ewb_bit_one:
   LDA #%00000010            ; pa1 high
   STA VIA3_PORTA
 ewb_done:
-  INC VIA3_PORTA            ; pulse clock
-  DEC VIA3_PORTA
-
+  JSR enc28j60_clock_pulse
+ 
   PLA
   DEX
   BNE ewb_loop
-  ;JSR small_delay
   RTS
 
 enc28j60_clock_pulse:
   INC VIA3_PORTA
-  NOP
-  NOP
+  JSR small_delay
   DEC VIA3_PORTA
+  JSR small_delay
   RTS
 
 
 small_delay:
+  PHX
+  LDX #$02
+sd_loop:
   NOP
-  NOP
-  NOP
-  NOP
-  NOP
-  NOP
-  NOP
-  NOP
+  DEX
+  BNE sd_loop
+  PLX
   RTS
 
 
-message_spi_start: .byte "Starting up.", $0d, $0a, $00 ; CR LF NULL
-message_spi_end:   .byte $0d, $0a, "SPI program ends.", $0d, $0a, $00
-message_enc28j60_init:   .byte $0d, $0a, "ENC28J60 intialized.", $0d, $0a, $00
+message_spi_start:      .byte "SPI test starting.", $0d, $0a, $00
+message_spi_end:        .byte "SPI test exiting.", $0d, $0a, $00
+message_enc28j60_init:  .byte  "ENC28J60 intialized.", $0d, $0a, $00
+message_enc28j60_rev:   .byte "Ethernet Revisoin ID ", $00
